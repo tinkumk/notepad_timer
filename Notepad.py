@@ -5,12 +5,14 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 import time
 import datetime
+import _thread as thread
 
 class Notepad:
 
     #variables
     __root = Tk()
 
+    frame = Frame(__root)
     #default window width and height
     __thisWidth = 300
     __thisHeight = 300
@@ -21,8 +23,11 @@ class Notepad:
     __thisHelpMenu = Menu(__thisMenuBar,tearoff=0)
     __thisScrollBar = Scrollbar(__thisTextArea)
     # timerfield = Text(__root)
-    timer_button = Button(__root, text="Start Timer")
+    timer_button = Button(__root, text="Start Typing")
+
     __file = None
+    timer = 0
+    paused = False
 
     def __init__(self,**kwargs):
         #initialization
@@ -47,6 +52,7 @@ class Notepad:
 
         #set the window text
         self.__root.title("Untitled - Notepad")
+        self.frame.bind()
 
         #center the window
         screenWidth = self.__root.winfo_screenwidth()
@@ -90,11 +96,10 @@ class Notepad:
 
         # self.label = tkinter.Label(text="")
         # self.label.pack()
+        # thread.start_new_thread(self.update_button_time, (self,))
         self.timer_button.pack()
-        # self.update_button_time()
-        # self.timer_button.place(x=0,y=0)
-        # self.__root.mainloop()
-
+        self.timer_button.config(command = self.buttonClicked)  # bind left mouse click
+        self.update_button_time()
 
     def __quitApplication(self):
         self.__root.destroy()
@@ -160,15 +165,32 @@ class Notepad:
         self.__thisTextArea.event_generate("<<Paste>>")
 
     def run(self):
-
         #run main application
         self.__root.mainloop()
 
+    def buttonClicked(self):
+        if self.paused == True:
+            self.paused = False
+            self.timer_button.config(text= self.timer)
+            # self.update_button_time
+        else:
+            self.paused =True
+            self.timer_button.config(text = "paused")
+
+
     def update_button_time(self):
-        millis = int(round(time.time() * 1000))
-        # print(millis)
-        self.timer_button.config(text = millis)
-        self.__root.after(1000, self.update_button_time)
+        if self.paused== False :
+            self.timer =self.timer+0.5
+            self.timer_button.config(text =self.timer)
+
+        self.__root.after(500, self.update_button_time)
+
+
+
+
+    def hello(self):
+        print("hello")
+
 
 
 #run main application
