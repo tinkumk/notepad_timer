@@ -14,9 +14,10 @@ class Notepad:
 
     frame = Frame(__root)
     #default window width and height
-    __thisWidth = 300
+    # dFont = tkinter..Font(family="Arial", size=30)
+    __thisWidth = 500
     __thisHeight = 300
-    __thisTextArea = Text(__root).pack()
+    __thisTextArea = Text(__root)
     __thisMenuBar = Menu(__root)
     __thisFileMenu = Menu(__thisMenuBar,tearoff=0)
     __thisEditMenu = Menu(__thisMenuBar,tearoff=0)
@@ -24,14 +25,16 @@ class Notepad:
     __thisScrollBar = Scrollbar(__thisTextArea)
     # timerfield = Text(__root)
     timer_button = Button(__root, text="Start Typing")
-
+    label = Label(__root, text="total character entered: 0")
     __file = None
     timer = 0
-    paused = False
+    paused = True
+    totalCharEntered= 0
+    speed =0
+    textAreaContents = ""
 
     def __init__(self,**kwargs):
         #initialization
-
         #set icon
         try:
         		self.__root.wm_iconbitmap("Notepad.ico") #GOT TO FIX THIS ERROR (ICON)
@@ -52,7 +55,6 @@ class Notepad:
 
         #set the window text
         self.__root.title("Untitled - Notepad")
-        self.frame.bind()
 
         #center the window
         screenWidth = self.__root.winfo_screenwidth()
@@ -61,8 +63,10 @@ class Notepad:
         left = (screenWidth / 2) - (self.__thisWidth / 2)
         top = (screenHeight / 2) - (self.__thisHeight /2)
 
-        self.__root.geometry('%dx%d+%d+%d' % (self.__thisWidth, self.__thisHeight, left, top))
+        # self.__root.geometry('%dx%d+%d+%d' % (self.__thisWidth, self.__thisHeight, left, top))
 
+        # self.__thisTextArea.winfo_screen()
+        self.__thisTextArea.pack(fill=BOTH, expand=YES)
         #to make the textarea auto resizable
         self.__root.grid_rowconfigure(0,weight=1)
         self.__root.grid_columnconfigure(0,weight=1)
@@ -71,22 +75,22 @@ class Notepad:
 
         # self.__thisTextArea.grid(sticky=N + E + S + W)
 
-        # self.__thisFileMenu.add_command(label="New",command=self.__newFile)
-        # self.__thisFileMenu.add_command(label="Open",command=self.__openFile)
-        # self.__thisFileMenu.add_command(label="Save",command=self.__saveFile)
-        # self.__thisFileMenu.add_separator()
-        # self.__thisFileMenu.add_command(label="Exit",command=self.__quitApplication)
-        # self.__thisMenuBar.add_cascade(label="File",menu=self.__thisFileMenu)
+        self.__thisFileMenu.add_command(label="New",command=self.__newFile)
+        self.__thisFileMenu.add_command(label="Open",command=self.__openFile)
+        self.__thisFileMenu.add_command(label="Save",command=self.__saveFile)
+        self.__thisFileMenu.add_separator()
+        self.__thisFileMenu.add_command(label="Exit",command=self.__quitApplication)
+        self.__thisMenuBar.add_cascade(label="File",menu=self.__thisFileMenu)
 
-        # self.__thisEditMenu.add_command(label="Cut",command=self.__cut)
-        # self.__thisEditMenu.add_command(label="Copy",command=self.__copy)
-        # self.__thisEditMenu.add_command(label="Paste",command=self.__paste)
-        # self.__thisMenuBar.add_cascade(label="Edit",menu=self.__thisEditMenu)
-        #
-        # self.__thisHelpMenu.add_command(label="About Notepad",command=self.__showAbout)
-        # self.__thisMenuBar.add_cascade(label="Help",menu=self.__thisHelpMenu)
-        #
-        # self.__root.config(menu=self.__thisMenuBar)
+        self.__thisEditMenu.add_command(label="Cut",command=self.__cut)
+        self.__thisEditMenu.add_command(label="Copy",command=self.__copy)
+        self.__thisEditMenu.add_command(label="Paste",command=self.__paste)
+        self.__thisMenuBar.add_cascade(label="Edit",menu=self.__thisEditMenu)
+
+        self.__thisHelpMenu.add_command(label="About Notepad",command=self.__showAbout)
+        self.__thisMenuBar.add_cascade(label="Help",menu=self.__thisHelpMenu)
+
+        self.__root.config(menu=self.__thisMenuBar)
 
         # self.__thisScrollBar.pack(side=RIGHT,fill=Y)
         # self.__thisScrollBar.config(command=self.__thisTextArea.yview)
@@ -98,15 +102,19 @@ class Notepad:
         # self.label.pack()
         # thread.start_new_thread(self.update_button_time, (self,))
         self.timer_button.pack()
-        self.timer_button.config(command = self.buttonClicked)  # bind left mouse click
+        self.timer_button.config(command = self.buttonClicked)
         self.update_button_time()
+        self.label.pack()
+        self.__thisTextArea.focus()
+        self.__thisTextArea.bind("<Control-space>", self.pressCmdSpace)
+        self.__thisTextArea.bind("<Key>", self.key)
 
     def __quitApplication(self):
         self.__root.destroy()
         #exit()
 
     def __showAbout(self):
-        showinfo("Notepad","Created by: Ferdinand Silva (http://ferdinandsilva.com)")
+        showinfo("Notepad","Created by: tmkakot, tinkumonikakoti@twitter.com")
 
     def __openFile(self):
         
@@ -175,26 +183,42 @@ class Notepad:
             # self.update_button_time
         else:
             self.paused =True
-            self.timer_button.config(text = "paused")
+            self.timer_button.config(text = "paused " +"time: " + str(self.timer)+
+                                           "  speed: " + "%.2f" % self.speed+ "WPM")
 
 
     def update_button_time(self):
         if self.paused== False :
             self.timer =self.timer+0.5
-            self.timer_button.config(text =self.timer)
+            if (self.timer > 0):
+                self.speed = (self.totalCharEntered * 60) / (self.timer * 5)
+
+            self.timer_button.config(text ="time: " + str(self.timer)+
+                                           "  speed: " + "%.2f" % self.speed+"WPM")
 
         self.__root.after(500, self.update_button_time)
 
+    def key(self, event):
+        if(event.char >= ' ' and event.char <= '~'):
+            self.paused = False
+            if event.char != ' ':
+                self.totalCharEntered +=1
+            self.textAreaContents += event.char
 
+        if(event.char == chr(8)):#backspace
+            if not self.textAreaContents.endswith(' '):
+                self.totalCharEntered -=1
+        self.label.config(text ="total character entered: "+ str(self.totalCharEntered))
 
-
-    def hello(self):
-        print("hello")
-
+    def pressCmdSpace(self, event):
+        self.paused = True
+        self.timer_button.config(text="paused " + "time: " + str(self.timer) +
+                                      "  speed: " + "%.2f" % self.speed + "WPM")
 
 
 #run main application
-notepad = Notepad(width=600,height=400)
+
+notepad = Notepad(width=800,height=400)
 notepad.run()
 
 
