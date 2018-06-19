@@ -25,11 +25,14 @@ class Notepad:
     __thisScrollBar = Scrollbar(__thisTextArea)
     # timerfield = Text(__root)
     timer_button = Button(__root, text="Start Typing")
-    label = Label(__root, text="total character entered: 0")
+    label_character = Label(__root, text="Character entered: 0. Word count: 0")
+    label_speed = Label(__root, text="time: 0:0\nspeed(taking as word): 0WPM\n"+
+                                     "speed(taking 5character as word): 0WPM.")
     __file = None
     timer = 0
     paused = True
     totalCharEntered= 0
+    word_count = 0
     speed =0
     textAreaContents = ""
 
@@ -104,7 +107,8 @@ class Notepad:
         self.timer_button.pack()
         self.timer_button.config(command = self.buttonClicked)
         self.update_button_time()
-        self.label.pack()
+        self.label_speed.pack()
+        self.label_character.pack()
         self.__thisTextArea.focus()
         self.__thisTextArea.bind("<Control-space>", self.pressCmdSpace)
         self.__thisTextArea.bind("<Key>", self.key)
@@ -114,7 +118,7 @@ class Notepad:
         #exit()
 
     def __showAbout(self):
-        showinfo("Notepad","Created by: tmkakot, tinkumonikakoti@twitter.com")
+        showinfo("Notepad","Created by: tmkakot, twitter.com/tinku_moni")
 
     def __openFile(self):
         
@@ -179,41 +183,73 @@ class Notepad:
     def buttonClicked(self):
         if self.paused == True:
             self.paused = False
-            self.timer_button.config(text= self.timer)
+            self.timer_button.config(text="typing...-click to pause.")
             # self.update_button_time
         else:
             self.paused =True
-            self.timer_button.config(text = "paused " +"time: " + str(self.timer)+
-                                           "  speed: " + "%.2f" % self.speed+ "WPM")
+            self.timer_button.config(text = "paused. press any key to type.")
 
 
     def update_button_time(self):
         if self.paused== False :
             self.timer =self.timer+0.5
-            if (self.timer > 0):
-                self.speed = (self.totalCharEntered * 60) / (self.timer * 5)
 
-            self.timer_button.config(text ="time: " + str(self.timer)+
-                                           "  speed: " + "%.2f" % self.speed+"WPM")
+            self.label_speed.config(text ="time: " + self.get_time_in_min(self.timer)
+                                        +"\nspeed(taking as word): "+str(round(self.get_word_speed(),2))+"WPM\n"+
+                                     "speed(taking 5character as word): "+str(round(self.get_5char_word_speed(),2))+"WPM.")
+
 
         self.__root.after(500, self.update_button_time)
 
     def key(self, event):
+
         if(event.char >= ' ' and event.char <= '~'):
+            self.__thisTextArea.config(state=NORMAL)
             self.paused = False
             if event.char != ' ':
                 self.totalCharEntered +=1
+                if self.textAreaContents.endswith(' ') or len(self.textAreaContents) ==0:
+                    self.word_count +=1
             self.textAreaContents += event.char
+            self.timer_button.config(text="typing...-click to pause.")
+
+        if (self.paused):
+            self.__thisTextArea.config(state=DISABLED)
+            return
 
         if(event.char == chr(8)):#backspace
-            if not self.textAreaContents.endswith(' '):
-                self.totalCharEntered -=1
-        self.label.config(text ="total character entered: "+ str(self.totalCharEntered))
+            if len(self.textAreaContents)>0:
+                if not self.textAreaContents.endswith(' '):
+                    self.totalCharEntered -=1
+                if self.textAreaContents == " ":
+                    self.word_count == 0
+                if not self.textAreaContents.endswith(' ') and\
+                    self.textAreaContents[len(self.textAreaContents)-2] == ' ':
+                        self.word_count -=1
+                lenghth= len(self.textAreaContents) -1
+                self.textAreaContents = self.textAreaContents[0: lenghth]
+                # print(self.textAreaContents)
+        self.label_character.config(text="Character entered: "+ str(self.totalCharEntered)
+                               +".Word count: "+ str(self.word_count))
 
     def pressCmdSpace(self, event):
         self.paused = True
-        self.timer_button.config(text="paused " + "time: " + str(self.timer) +
-                                      "  speed: " + "%.2f" % self.speed + "WPM")
+        self.timer_button.config(text="paused. press any key to type.")
+
+    def get_time_in_min(self, time_in_sec):
+        minutes = int(time_in_sec/60)
+        secs = time_in_sec%60
+        return str(minutes) + ":" +str(secs)
+
+    def get_5char_word_speed(self):
+        if (self.timer > 0):
+            return (self.totalCharEntered * 60) / (self.timer * 5)
+
+    def get_word_speed(self):
+        if (self.timer > 0):
+            return (self.word_count * 60) / (self.timer)
+
+
 
 
 #run main application
